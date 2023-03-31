@@ -9,24 +9,30 @@ using WindowsService_Net6Worker_Background;
 //    })
 //    .Build();
 
-IHostBuilder CreateHostBuilder(string[] args) =>
-    Host.CreateDefaultBuilder(args)
-        .UseWindowsService()
-        .ConfigureServices(services =>
-        {
-            services.AddHostedService<Worker>();
-        })
-        .UseSerilog();
-
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
     .Enrich.FromLogContext()
     .WriteTo.Console()
-    .WriteTo.File(@"C:\\Temp\\SeriLogFile-.txt", rollingInterval:RollingInterval.Day)
+    .WriteTo.File(@"C:\\Temp\\StartupLog.txt")
     //.CreateLogger();
     .CreateBootstrapLogger();
+
+IHostBuilder CreateHostBuilder(string[] args) =>
+    Host.CreateDefaultBuilder(args)
+        .UseWindowsService()
+        .UseSerilog((context, services, configuration) => configuration
+            //.WriteTo.Console()
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            //.Enrich.FromLogContext()
+            )
+        .ConfigureServices(services =>
+        {
+            services.AddHostedService<Worker>();
+        });
+        //.UseSerilog();
 
 try
 {
